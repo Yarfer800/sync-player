@@ -1,7 +1,8 @@
 from fastapi import APIRouter, HTTPException, status
 
-from app.api.deps import CurrentUser, RoomRepoDep, ParticipantRepoDep, UserRepoDep
+from app.api.deps import CurrentUser, RoomRepoDep, ParticipantRepoDep, UserRepoDep, PlayerStateServiceDep
 from app.db.models import ParticipantRole
+from app.schemas.player_state import PlayerState
 from app.schemas.room import (
     RoomCreate, RoomOut, RoomDetail, ParticipantOut,
     RoomJoin, RoomInviteResponse, RoomJoinByInvite
@@ -212,3 +213,62 @@ async def _build_room_detail(room_repo, participant_repo, room_id: int) -> RoomD
             for p in participants
         ],
     )
+
+
+@router.get("/{room_id}/player/state", response_model=PlayerState)
+async def get_player_state(
+    room_id: int,
+    user: CurrentUser,
+    room_repo: RoomRepoDep,
+    participant_repo: ParticipantRepoDep,
+    player_service: PlayerStateServiceDep,
+):
+    room = await room_repo.get_by_id(room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    participant = await participant_repo.get_by_room_and_user(room_id, user.user_id)
+    if not participant:
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    return await player_service.get_room_state(room_id)
+
+
+@router.post("/{room_id}/player/state", response_model=PlayerState, status_code=status.HTTP_201_CREATED)
+async def create_player_state(
+    room_id: int,
+    state: PlayerState,
+    user: CurrentUser,
+    room_repo: RoomRepoDep,
+    participant_repo: ParticipantRepoDep,
+    player_service: PlayerStateServiceDep,
+):
+    room = await room_repo.get_by_id(room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    participant = await participant_repo.get_by_room_and_user(room_id, user.user_id)
+    if not participant or participant.role != ParticipantRole.OWNER:
+        raise HTTPException(status_code=403, detail="Only the room owner can create the player state")
+
+    return await player_service.update_room_state(room_id, state)
+
+
+@router.put("/{room_id}/player/state", response_model=PlayerState)
+async def update_player_state(
+    room_id: int,
+    state: PlayerState,
+    user: CurrentUser,
+    room_repo: RoomRepoDep,
+    participant_repo: ParticipantRepoDep,
+    player_service: PlayerStateServiceDep,
+):
+    room = await room_repo.get_by_id(room_id)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+    
+    participant = await participant_repo.get_by_room_and_user(room_id, user.user_id)
+    if not participant or participant.role != ParticipantRole.OWNER:
+        raise HTTPException(status_code=403, detail="Only the room owner can update the player state")
+
+    return await player_service.update_room_state(room_id, state)

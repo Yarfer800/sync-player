@@ -11,6 +11,7 @@ class Config(BaseSettings):
     text_model_api_key: str
     image_model: str
     image_model_api_key: str
+    redis_url: str = "redis://localhost:6379"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

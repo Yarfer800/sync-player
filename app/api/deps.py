@@ -10,6 +10,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Config
 from app.db.engine import build_engine, build_session_factory
 from app.db.models import User
+from app.db.redis import redis_client
+from app.repositories.player_state import PlayerStateRepository
+from app.services.player_state import PlayerStateService
+from redis.asyncio import Redis
 from app.repositories import (
     UserRepository,
     RoomRepository,
@@ -112,3 +116,24 @@ UserRepoDep = Annotated[UserRepository, Depends(get_user_repo)]
 RoomRepoDep = Annotated[RoomRepository, Depends(get_room_repo)]
 ParticipantRepoDep = Annotated[RoomParticipantRepository, Depends(get_participant_repo)]
 MessageRepoDep = Annotated[MessageRepository, Depends(get_message_repo)]
+
+
+async def get_redis_client() -> Redis:
+    yield redis_client
+
+
+RedisDep = Annotated[Redis, Depends(get_redis_client)]
+
+
+def get_player_state_repo(redis: RedisDep) -> PlayerStateRepository:
+    return PlayerStateRepository(redis)
+
+
+PlayerStateRepoDep = Annotated[PlayerStateRepository, Depends(get_player_state_repo)]
+
+
+def get_player_state_service(repo: PlayerStateRepoDep) -> PlayerStateService:
+    return PlayerStateService(repo)
+
+
+PlayerStateServiceDep = Annotated[PlayerStateService, Depends(get_player_state_service)]
