@@ -13,9 +13,6 @@ class ChunkVideo:
 
 
 class YTDlpPlayer:
-    def __init__(self) -> None:
-        ...
-
     async def download_chunk_of_video(self, url: str, chunk: ChunkVideo, output_path: str | Path):
         return await asyncio.to_thread(self._sync_download_video, url, chunk, output_path)
 
