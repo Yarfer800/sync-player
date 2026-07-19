@@ -1,6 +1,4 @@
-def main():
-    print("Hello from sync-player!")
-
+import uvicorn
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run("app.app:app", reload=True)

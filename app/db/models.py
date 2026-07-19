@@ -56,6 +56,10 @@ class Room(TimestampMixin, Base):
     )
     title: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     content_title: Mapped[str] = mapped_column(String(512), nullable=False)
+    password: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    invite_code: Mapped[Optional[str]] = mapped_column(
+        String(64), unique=True, index=True, nullable=True
+    )
 
     current_users: Mapped[list["User"]] = relationship(
         "User",
