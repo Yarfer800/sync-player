@@ -48,6 +48,32 @@ async def create_room(
     return await _build_room_detail(room_repo, participant_repo, room.room_id)
 
 
+@router.post("/join/invite", response_model=RoomDetail)
+async def join_by_invite(
+    body: RoomJoinByInvite,
+    user: CurrentUser,
+    room_repo: RoomRepoDep,
+    participant_repo: ParticipantRepoDep,
+    user_repo: UserRepoDep,
+):
+    room = await room_repo.get_by_invite_code(body.invite_code)
+    if not room:
+        raise HTTPException(status_code=404, detail="Invalid invite code")
+
+    existing = await participant_repo.get_by_room_and_user(room.room_id, user.user_id)
+    if existing:
+        raise HTTPException(status_code=409, detail="Already in this room")
+
+    await participant_repo.create(
+        room_id=room.room_id,
+        user_id=user.user_id,
+        role=ParticipantRole.GUEST,
+    )
+    await user_repo.update(user.id, in_room=room.room_id)
+
+    return await _build_room_detail(room_repo, participant_repo, room.room_id)
+
+
 @router.get("/{room_id}", response_model=RoomDetail)
 async def get_room(
     room_id: int,
@@ -143,30 +169,7 @@ async def generate_invite(
     return RoomInviteResponse(invite_code=new_code)
 
 
-@router.post("/join/invite", response_model=RoomDetail)
-async def join_by_invite(
-    body: RoomJoinByInvite,
-    user: CurrentUser,
-    room_repo: RoomRepoDep,
-    participant_repo: ParticipantRepoDep,
-    user_repo: UserRepoDep,
-):
-    room = await room_repo.get_by_invite_code(body.invite_code)
-    if not room:
-        raise HTTPException(status_code=404, detail="Invalid invite code")
 
-    existing = await participant_repo.get_by_room_and_user(room.room_id, user.user_id)
-    if existing:
-        raise HTTPException(status_code=409, detail="Already in this room")
-
-    await participant_repo.create(
-        room_id=room.room_id,
-        user_id=user.user_id,
-        role=ParticipantRole.GUEST,
-    )
-    await user_repo.update(user.id, in_room=room.room_id)
-
-    return await _build_room_detail(room_repo, participant_repo, room.room_id)
 
 
 @router.get("/{room_id}/participants", response_model=list[ParticipantOut])

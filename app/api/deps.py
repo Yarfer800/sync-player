@@ -4,7 +4,7 @@ import json
 from typing import Annotated
 from urllib.parse import parse_qs, unquote
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, status, WebSocketException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import Config
@@ -92,8 +92,33 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_ws(
+    session: Annotated[AsyncSession, Depends(get_session)],
+    init_data: str = Query(..., alias="init_data"),
+) -> User:
+    try:
+        tg_user = validate_init_data(init_data, config.token)
+    except HTTPException as e:
+        raise WebSocketException(code=status.WS_1008_POLICY_VIOLATION, reason=str(e.detail))
+
+    tg_id: int = tg_user["id"]
+    username: str | None = tg_user.get("username")
+
+    repo = UserRepository(session)
+    user = await repo.get_by_user_id(tg_id)
+
+    if user is None:
+        user = await repo.create(user_id=tg_id, username=username)
+    elif user.username != username and username is not None:
+        await repo.update(user.id, username=username)
+        user.username = username
+
+    return user
+
+
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
+CurrentUserWS = Annotated[User, Depends(get_current_user_ws)]
 
 
 def get_user_repo(session: SessionDep) -> UserRepository:

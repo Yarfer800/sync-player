@@ -9,6 +9,15 @@ from app.repositories import (
     RoomParticipantRepository,
     MessageRepository,
 )
+from httpx import AsyncClient, ASGITransport
+
+import os
+os.environ.setdefault("TOKEN", "test_token")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("ADMIN_ID", "1")
+
+from app.app import app
+from app.api.deps import get_session, get_current_user, get_current_user_ws
 
 
 @pytest.fixture(scope="session")
@@ -32,6 +41,26 @@ async def session(engine) -> AsyncSession:
         async with sess.begin():
             yield sess
             await sess.rollback()
+
+@pytest.fixture
+def test_app(session: AsyncSession):
+    app.dependency_overrides[get_session] = lambda: session
+    yield app
+    app.dependency_overrides.clear()
+
+@pytest.fixture
+async def client(test_app):
+    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+        yield ac
+
+@pytest.fixture
+def auth_user(test_app, make_user):
+    async def _auth(user_id=100, username="testuser"):
+        user = await make_user(user_id=user_id, username=username)
+        test_app.dependency_overrides[get_current_user] = lambda: user
+        test_app.dependency_overrides[get_current_user_ws] = lambda: user
+        return user
+    return _auth
 
 
 @pytest.fixture()

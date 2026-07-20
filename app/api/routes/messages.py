@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Query
 
 from app.api.deps import CurrentUser, MessageRepoDep, RoomRepoDep
 from app.schemas.message import MessageCreate, MessageOut
+from app.services.websocket import manager
 
 router = APIRouter(prefix="/rooms/{room_id}/messages", tags=["messages"])
 
@@ -51,7 +52,7 @@ async def send_message(
         user_id=user.user_id,
         room_id=room_id,
     )
-    return MessageOut(
+    out_msg = MessageOut(
         id=msg.id,
         text=msg.text,
         image=msg.image,
@@ -60,6 +61,21 @@ async def send_message(
         room_id=msg.room_id,
         created_at=msg.created_at,
     )
+
+    await manager.broadcast_to_room(room_id, {
+        "type": "new_message",
+        "message": {
+            "id": out_msg.id,
+            "text": out_msg.text,
+            "image": out_msg.image,
+            "user_id": out_msg.user_id,
+            "username": out_msg.username,
+            "room_id": out_msg.room_id,
+            "created_at": out_msg.created_at.isoformat() if out_msg.created_at else None,
+        }
+    })
+
+    return out_msg
 
 
 @router.delete("/{message_id}", status_code=204)
