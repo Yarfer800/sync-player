@@ -274,4 +274,12 @@ async def update_player_state(
     if not participant or participant.role != ParticipantRole.OWNER:
         raise HTTPException(status_code=403, detail="Only the room owner can update the player state")
 
-    return await player_service.update_room_state(room_id, state)
+    updated = await player_service.update_room_state(room_id, state)
+    
+    from app.services.websocket import manager
+    await manager.broadcast_to_room(room_id, {
+        "type": "player_state_updated",
+        "payload": updated.model_dump()
+    })
+    
+    return updated

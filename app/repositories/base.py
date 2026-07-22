@@ -19,6 +19,7 @@ class BaseRepository(ABC, Generic[Model]):
         instance = self._model(**kwargs)
         self._session.add(instance)
         await self._session.flush()
+        await self._session.refresh(instance)
         return instance
 
     async def get_by_id(self, pk: int) -> Optional[Model]:

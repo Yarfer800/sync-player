@@ -17,7 +17,7 @@ class RoomParticipantRepository(BaseRepository[RoomParticipant]):
             RoomParticipant.user_id == user_id,
         )
         result = await self._session.execute(stmt)
-        return result.scalar_one_or_none()
+        return result.scalars().first()
 
     async def get_by_room(self, room_id: int) -> Sequence[RoomParticipant]:
         stmt = select(RoomParticipant).where(
