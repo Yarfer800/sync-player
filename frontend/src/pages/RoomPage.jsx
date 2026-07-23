@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useRoom } from '../hooks/useRoom';
@@ -21,10 +21,33 @@ export default function RoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { room, participants, loading: roomLoading } = useRoom(roomId);
+  const { room, participants, loading: roomLoading, refetch: refetchRoom } = useRoom(roomId);
   const { messages, loading: msgsLoading, addMessage, removeMessage, bottomRef } = useMessages(roomId);
   const { playerState, setPlayerState, loading: playerLoading, updateDesync, refetch: refetchPlayer } = usePlayerState(roomId);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState(null);
+
+  useEffect(() => {
+    if (room && !roomLoading && user) {
+      const isParticipant = participants.some((p) => p.user_id === user.user_id);
+      if (!isParticipant && !joining && !joinError) {
+        setJoining(true);
+        api(`/rooms/${roomId}/join`, { method: 'POST', body: { password: "" } })
+          .then(() => {
+             refetchRoom();
+             refetchPlayer();
+          })
+          .catch(e => {
+             console.error("Auto-join failed:", e);
+             setJoinError(e.message);
+          })
+          .finally(() => {
+             setJoining(false);
+          });
+      }
+    }
+  }, [room, roomLoading, participants, user, roomId, joining, joinError, refetchRoom, refetchPlayer]);
 
   const isOwner = participants.some(
     (p) => p.user_id === user?.user_id && p.role === 'owner'
