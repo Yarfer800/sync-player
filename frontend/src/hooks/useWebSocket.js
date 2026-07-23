@@ -15,7 +15,6 @@ export function useWebSocket(roomId, onMessage) {
           if (onMessage) onMessage(data);
         },
         (event) => {
-          // Auto-reconnect after 3 seconds if not clean close
           if (event.code !== 1000) {
             reconnectTimeoutRef.current = setTimeout(connect, 3000);
           }

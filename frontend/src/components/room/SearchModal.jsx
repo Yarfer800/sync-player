@@ -35,7 +35,6 @@ export default function SearchModal({ isOpen, onClose, roomId, onVideoSelect }) 
   const handleSelect = async (result) => {
     try {
       setSaving(true);
-      // We assume video_source_link is updated in player state
       const newState = {
         room_id: parseInt(roomId),
         current_timecode: 0.0,

@@ -109,7 +109,7 @@ export default function RoomPage() {
         loading={playerLoading} 
         isOwner={isOwner}
         onUpdateState={(newState) => {
-          setPlayerState(newState); // Optimistic update
+          setPlayerState(newState);
           api(`/rooms/${roomId}/player/state`, { method: 'PUT', body: newState }).catch(e => console.error(e));
         }}
       />

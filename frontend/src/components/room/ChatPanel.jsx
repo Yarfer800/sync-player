@@ -8,7 +8,6 @@ export default function ChatPanel({ messages, onSendMessage, onDeleteMessage, cu
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // Scroll to bottom when messages change
     if (bottomRef?.current) {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }

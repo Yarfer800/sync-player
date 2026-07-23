@@ -26,7 +26,6 @@ class ConnectionManager:
                 try:
                     await connection.send_json(message)
                 except Exception:
-                    # In case a connection is dropped unexpectedly
                     pass
 
 manager = ConnectionManager()

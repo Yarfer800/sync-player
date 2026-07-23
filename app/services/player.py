@@ -73,7 +73,7 @@ class YTDlpPlayer:
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best[ext=mp4]/best', # Get pre-muxed MP4 (usually 720p)
+            'format': 'best[ext=mp4]/best',
         }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)

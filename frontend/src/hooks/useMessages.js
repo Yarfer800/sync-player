@@ -25,7 +25,6 @@ export function useMessages(roomId) {
 
   const addMessage = useCallback((message) => {
     setMessages((prev) => {
-      // Avoid duplicates
       if (prev.some((m) => m.id === message.id)) return prev;
       return [...prev, message];
     });

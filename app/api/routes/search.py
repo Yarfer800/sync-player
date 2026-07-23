@@ -10,7 +10,7 @@ router = APIRouter(prefix="/search", tags=["search"])
 @router.get("", response_model=list[SearchResult])
 async def search_web(
     query: str = Query(..., min_length=1),
-    user: CurrentUser = None,  # Require authentication
+    user: CurrentUser = None,
 ):
     searcher = WebSearcher()
     results = await searcher.search(query)

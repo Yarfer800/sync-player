@@ -11,7 +11,6 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
   
   const [localTime, setLocalTime] = useState(0);
   
-  // 1. Fetch info (this gets the direct 1080p video URL and the audio URL)
   useEffect(() => {
     if (!playerState?.video_source_link) return;
     const fetchInfo = async () => {
@@ -33,16 +32,13 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
     fetchInfo();
   }, [playerState?.video_source_link]);
 
-  // Sync to playerState timecode (like when someone else seeks or initially)
   useEffect(() => {
     if (!playerState || !videoInfo) return;
-    // We only seek if the difference is large enough to avoid feedback loops
     if (Math.abs(playerState.current_timecode - localTime) > 2) {
       handleSeek(playerState.current_timecode, false);
     }
   }, [playerState?.current_timecode, videoInfo]);
 
-  // Handle Play/Pause sync
   useEffect(() => {
     if (!videoRef.current) return;
     
@@ -77,7 +73,6 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
       const time = audioRef.current.currentTime;
       setLocalTime(time);
 
-      // Sync video to audio if they drift (audio is master clock)
       if (Math.abs(videoRef.current.currentTime - time) > 0.3) {
         videoRef.current.currentTime = time;
       }
@@ -103,11 +98,9 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
   const audioStreamUrl = videoInfo?.audio_url ? `${apiUrl}/player/stream?url=${encodeURIComponent(videoInfo.audio_url)}` : undefined;
   const isCombined = videoInfo?.video_url === videoInfo?.audio_url;
 
-  // Initialize HLS for video stream if needed
   useEffect(() => {
     if (!videoStreamUrl || !videoRef.current) return;
     
-    // Check if URL suggests m3u8
     const isHls = videoInfo?.video_url?.includes('.m3u8');
     
     if (isHls && Hls.isSupported()) {
@@ -130,7 +123,6 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
       {playerState.video_source_link ? (
         <div style={{ position: 'relative', paddingTop: '56.25%', width: '100%', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
           
-          {/* Video */}
           <video
             ref={videoRef}
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
@@ -139,7 +131,6 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
             onTimeUpdate={isCombined ? handleTimeUpdate : undefined}
           />
 
-          {/* Audio (Master Clock for split streams) */}
           {!isCombined && audioStreamUrl && (
             <audio
               ref={audioRef}
@@ -148,7 +139,6 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
             />
           )}
 
-          {/* Custom Controls Container */}
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '15px', background: 'linear-gradient(transparent, rgba(0,0,0,0.8))', display: 'flex', alignItems: 'center', gap: '15px', zIndex: 20 }}>
             
             <button 

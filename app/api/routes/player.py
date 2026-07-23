@@ -44,7 +44,6 @@ async def stream_video(url: str, request: Request):
     cached = STREAM_HEADERS_CACHE.get(netloc, {})
     
     headers = dict(cached.get("headers", {}))
-    # Don't pass host header from cache
     headers.pop("Host", None)
     headers.pop("host", None)
     
@@ -53,7 +52,6 @@ async def stream_video(url: str, request: Request):
         
     cookies = {}
     if cached.get("cookies"):
-        # Simple cookie parsing (yt-dlp returns cookie string sometimes)
         cookie_str = cached["cookies"]
         for c in cookie_str.split(";"):
             if "=" in c:
@@ -130,7 +128,7 @@ async def get_info(
 @router.post("/download")
 async def download_chunk(
     body: DownloadRequest,
-    user: CurrentUser = None,  # Require authentication
+    user: CurrentUser = None,
 ):
     if body.start_time < 0 or body.end_time <= body.start_time:
         raise HTTPException(status_code=400, detail="Invalid time range")

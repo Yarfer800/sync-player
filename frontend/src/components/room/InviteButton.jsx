@@ -29,7 +29,6 @@ export default function InviteButton({ roomId }) {
       hapticFeedback('light');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback
       const textarea = document.createElement('textarea');
       textarea.value = inviteCode;
       document.body.appendChild(textarea);

@@ -8,8 +8,6 @@ from .base import Base, TimestampMixin
 
 
 class ParticipantRole(str, enum.Enum):
-    """Роль участника в комнате."""
-
     OWNER = "owner"
     GUEST = "guest"
 
