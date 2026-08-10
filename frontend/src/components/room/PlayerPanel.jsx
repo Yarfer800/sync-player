@@ -8,11 +8,13 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
   const videoRef = useRef(null);
   const audioRef = useRef(null);
   const hlsRef = useRef(null);
+  const containerRef = useRef(null);
   
   const [localTime, setLocalTime] = useState(0);
   
   useEffect(() => {
     if (!playerState?.video_source_link) return;
+    setVideoInfo(null);
     const fetchInfo = async () => {
       try {
         const apiUrl = import.meta.env.VITE_API_URL || '/api';
@@ -115,13 +117,17 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
       };
     } else {
       videoRef.current.src = videoStreamUrl;
+      videoRef.current.load();
+      if (audioRef.current) {
+        audioRef.current.load();
+      }
     }
   }, [videoStreamUrl]);
 
   return (
     <div className="player-panel">
       {playerState.video_source_link ? (
-        <div style={{ position: 'relative', paddingTop: '56.25%', width: '100%', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
+        <div ref={containerRef} style={{ position: 'relative', paddingTop: '56.25%', width: '100%', background: '#000', borderRadius: '8px', overflow: 'hidden' }}>
           
           <video
             ref={videoRef}
@@ -129,6 +135,11 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
             playsInline
             muted={!isCombined}
             onTimeUpdate={isCombined ? handleTimeUpdate : undefined}
+            onLoadedMetadata={() => {
+              if (playerState?.current_timecode !== undefined && videoRef.current) {
+                videoRef.current.currentTime = playerState.current_timecode;
+              }
+            }}
           />
 
           {!isCombined && audioStreamUrl && (
@@ -136,6 +147,11 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
               ref={audioRef}
               src={audioStreamUrl}
               onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={() => {
+                if (playerState?.current_timecode !== undefined && audioRef.current) {
+                  audioRef.current.currentTime = playerState.current_timecode;
+                }
+              }}
             />
           )}
 
@@ -167,6 +183,21 @@ export default function PlayerPanel({ playerState, loading, isOwner, onUpdateSta
               {formatTime(videoInfo?.duration)}
             </span>
 
+            <button 
+              onClick={() => {
+                if (containerRef.current) {
+                  if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                  } else {
+                    containerRef.current.requestFullscreen();
+                  }
+                }
+              }}
+              style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '16px', padding: 0, marginLeft: '5px' }}
+              title="Toggle Fullscreen"
+            >
+              ⛶
+            </button>
           </div>
         </div>
       ) : (
